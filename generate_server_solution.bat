@@ -1,6 +1,6 @@
 @echo off
 
-set BUILD_DIR=build
+set BUILD_DIR=server_build
 set GENERATOR="Visual Studio 18 2026"
 set ARCH=-A x64
 
@@ -12,6 +12,6 @@ if not exist %BUILD_DIR% (
 cd %BUILD_DIR%
 
 echo Running CMake...
-cmake .. -G %GENERATOR% %ARCH%
+cmake .. -G %GENERATOR% %ARCH% -DBUILD_SERVER=ON -DBUILD_CLIENT=OFF
 
 pause
