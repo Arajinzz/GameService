@@ -7,14 +7,15 @@ project(GameService LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(EntryPoint sServer)
 
 # vars
 set(ENGINE_RUNTIME "MultiThreaded$<$<CONFIG:Debug>:Debug>")  # /MT or /MTd
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG          "${CMAKE_BINARY_DIR}/WiEntry/Debug")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE        "${CMAKE_BINARY_DIR}/WiEntry/Release")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/WiEntry/RelWithDebInfo")
-set(BIN_FOLDER "${CMAKE_BINARY_DIR}/WiEntry/$<IF:$<CONFIG:Debug>,Debug,$<IF:$<CONFIG:Release>,Release,RelWithDebInfo>>")
-set(ENTRY_FOLDER "${CMAKE_BINARY_DIR}/WiEntry")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG          "${CMAKE_BINARY_DIR}/${EntryPoint}/Debug")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE        "${CMAKE_BINARY_DIR}/${EntryPoint}/Release")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/${EntryPoint}/RelWithDebInfo")
+set(BIN_FOLDER "${CMAKE_BINARY_DIR}/${EntryPoint}/$<IF:$<CONFIG:Debug>,Debug,$<IF:$<CONFIG:Release>,Release,RelWithDebInfo>>")
+set(ENTRY_FOLDER "${CMAKE_BINARY_DIR}/${EntryPoint}")
 message(STATUS "Binary Folder: ${BIN_FOLDER}")
 
 # Restrict configs in Visual Studio to Debug & Release
@@ -51,13 +52,11 @@ target_compile_definitions(PROJECT_OPTIONS INTERFACE
     $<$<CONFIG:RelWithDebInfo>:RELEASE_BUILD>
 )
 
-add_subdirectory(WiApplication)
-add_subdirectory(WiCore)
-add_subdirectory(WiEntry)
-add_subdirectory(WiSandbox)
-add_subdirectory(WiBackendDX12)
-add_subdirectory(WiRender)
-add_subdirectory(WiWorld)
+add_subdirectory(sClient)
+add_subdirectory(sCore)
+add_subdirectory(sFramework)
+add_subdirectory(sIPC)
+add_subdirectory(sServer)
 
 #########################################################
 #               THIRD PARTY                             #
@@ -105,4 +104,4 @@ FetchContent_MakeAvailable(JoltPhysics)
 ######################## Jolt   #########################
 
 # Startup project
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT WiEntry)
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${EntryPoint})
