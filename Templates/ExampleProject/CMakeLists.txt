@@ -1,3 +1,4 @@
+include(GenerateExportHeader)
 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     # includes
@@ -7,9 +8,13 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     src/Example.cpp
 )
 
-add_library(Example STATIC ${PROJECT_SOURCES})
+add_library(Example SHARED ${PROJECT_SOURCES})
+generate_export_header(Example)
 
-target_include_directories(Example PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_include_directories(Example PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/..
+    ${CMAKE_CURRENT_BINARY_DIR}
+)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${PROJECT_SOURCES})
 

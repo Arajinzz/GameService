@@ -10,7 +10,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(EntryPoint sServer)
 
 # vars
-set(ENGINE_RUNTIME "MultiThreaded$<$<CONFIG:Debug>:Debug>")  # /MT or /MTd
+set(ENGINE_RUNTIME "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")  # /Md or /MDd
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG          "${CMAKE_BINARY_DIR}/${EntryPoint}/Debug")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE        "${CMAKE_BINARY_DIR}/${EntryPoint}/Release")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/${EntryPoint}/RelWithDebInfo")
@@ -52,7 +52,7 @@ target_compile_definitions(PROJECT_OPTIONS INTERFACE
     $<$<CONFIG:RelWithDebInfo>:RELEASE_BUILD>
 )
 
-add_subdirectory(sClient)
+#add_subdirectory(sClient)
 add_subdirectory(sCore)
 add_subdirectory(sFramework)
 add_subdirectory(sIPC)
@@ -77,6 +77,7 @@ set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "" FORCE)
 set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
 set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_SHARED ON CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(spdlog)
 
@@ -98,6 +99,7 @@ set(DOUBLE_PRECISION OFF CACHE BOOL "" FORCE)
 set(CROSS_PLATFORM_DETERMINISTIC ON CACHE BOOL "" FORCE)
 set(FLOATING_POINT_EXCEPTIONS_ENABLED OFF CACHE BOOL "" FORCE)
 set(CPP_EXCEPTIONS_ENABLED OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(JoltPhysics)
 
