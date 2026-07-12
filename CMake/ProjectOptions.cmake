@@ -1,3 +1,8 @@
+# guard for duplicate includes
+if(TARGET PROJECT_OPTIONS)
+    return()
+endif()
+
 add_library(PROJECT_OPTIONS INTERFACE)
 
 set(PROJECT_RUNTIME "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")  # /Md or /MDd

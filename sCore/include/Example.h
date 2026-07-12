@@ -3,5 +3,5 @@
 class SCORE_EXPORT Example
 {
 public:
-  void Test();
+  static void Test();
 };

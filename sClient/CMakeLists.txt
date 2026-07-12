@@ -1,29 +1,25 @@
+cmake_minimum_required(VERSION 3.15)
 
-#file(GLOB_RECURSE PROJECT_INCLUDES CONFIGURE_DEPENDS
-#    
-#)
+project(sClient LANGUAGES CXX)
+
+include(../CMake/Common.cmake)
+include(../CMake/ProjectOptions.cmake)
 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
+    # includes
+    # include/Example.h
+
+    # sources
     src/Main.cpp
 )
 
-# Add sources and includes
-add_executable(sClient ${PROJECT_SOURCES})
-#target_sources(sClient PRIVATE ${PROJECT_INCLUDES})
+# dll or excutable
+BuildAsExecutable("${PROJECT_SOURCES}")
+SetProjectPaths(${PROJECT_NAME} ${PROJECT_NAME})
+SetTargetIncludes(${PROJECT_NAME})
+SetProjectOptions(${PROJECT_NAME})
 
-# Add includes
-target_include_directories(sClient PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_BINARY_DIR}
-)
+LinkLib(sCore PRIVATE)
 
-# Organize filters in VS according to actual folders
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${PROJECT_SOURCES})
-#source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${PROJECT_INCLUDES})
-
-set_property(TARGET sClient PROPERTY MSVC_RUNTIME_LIBRARY ${ENGINE_RUNTIME})
-set_property(TARGET sClient PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${BIN_FOLDER})
-
-target_link_libraries(sClient PRIVATE sCore)
-# link project options
-target_link_libraries(sClient PRIVATE PROJECT_OPTIONS)
+# Startup project
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})

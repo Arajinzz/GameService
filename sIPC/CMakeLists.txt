@@ -1,4 +1,9 @@
-include(GenerateExportHeader)
+cmake_minimum_required(VERSION 3.15)
+
+project(sIPC LANGUAGES CXX)
+
+include(../CMake/Common.cmake)
+include(../CMake/ProjectOptions.cmake)
 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     # includes
@@ -8,20 +13,11 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     src/Example.cpp
 )
 
-add_library(sIPC SHARED ${PROJECT_SOURCES})
-generate_export_header(sIPC)
+# dll or excutable
+BuildAsShared("${PROJECT_SOURCES}")
+SetProjectPaths(${PROJECT_NAME} ${PROJECT_NAME})
+SetTargetIncludes(${PROJECT_NAME})
+SetProjectOptions(${PROJECT_NAME})
 
-target_include_directories(sIPC PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_BINARY_DIR}
-)
-
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${PROJECT_SOURCES})
-
-set_property(TARGET sIPC PROPERTY MSVC_RUNTIME_LIBRARY ${ENGINE_RUNTIME})
-set_property(TARGET sIPC PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${BIN_FOLDER})
-
-# link Core
-target_link_libraries(sIPC PUBLIC sCore)
-# link project options
-target_link_libraries(sIPC PRIVATE PROJECT_OPTIONS)
+# link libraries
+LinkLib(sCore PUBLIC)
