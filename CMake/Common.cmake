@@ -12,11 +12,16 @@ function(SetProjectPaths target projectName)
     set_target_properties(${target} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY_DEBUG
             "${CMAKE_BINARY_DIR}/${projectName}/Debug"
-
         RUNTIME_OUTPUT_DIRECTORY_RELEASE
             "${CMAKE_BINARY_DIR}/${projectName}/Release"
-
         RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO
+            "${CMAKE_BINARY_DIR}/${projectName}/RelWithDebInfo"
+
+        ARCHIVE_OUTPUT_DIRECTORY_DEBUG
+            "${CMAKE_BINARY_DIR}/${projectName}/Debug"
+        ARCHIVE_OUTPUT_DIRECTORY_RELEASE
+            "${CMAKE_BINARY_DIR}/${projectName}/Release"
+        ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO
             "${CMAKE_BINARY_DIR}/${projectName}/RelWithDebInfo"
     )
 endfunction()
@@ -36,11 +41,22 @@ function(SetProjectOptions target)
     target_link_libraries(${target} PUBLIC PROJECT_OPTIONS)
 endfunction()
 
-function(DistributeDLL)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+function(DistributeDLL target)
+    if(NOT TARGET ${target})
+        message(FATAL_ERROR "Target ${target} does not exist")
+    endif()
+
+    get_target_property(type ${target} TYPE)
+
+    if(NOT ("${type}" STREQUAL "EXECUTABLE"
+        OR "${type}" STREQUAL "SHARED_LIBRARY"))
+        return()
+    endif()
+
+    add_custom_command(TARGET ${target} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}>
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>
+            $<TARGET_RUNTIME_DLLS:${target}>
+            $<TARGET_FILE_DIR:${target}>
         COMMAND_EXPAND_LISTS
     )
 endfunction()
@@ -51,9 +67,17 @@ function(LinkLib target visibility)
             ${CMAKE_CURRENT_LIST_DIR}/../${target}
             ${CMAKE_CURRENT_BINARY_DIR}/${target}
         )
-        target_link_libraries(${PROJECT_NAME} ${visibility} ${target})
     endif()
-    DistributeDLL()
+
+    if(TARGET ${target})
+        message(STATUS "${target} exists")
+    else()
+        message(FATAL_ERROR "${target} does NOT exist")
+    endif()
+
+    target_link_libraries(${PROJECT_NAME} ${visibility} ${target})
+
+    DistributeDLL(${PROJECT_NAME})
 endfunction()
 
 function(BuildAsShared PROJECT_SOURCES)

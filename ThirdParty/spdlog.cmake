@@ -20,6 +20,5 @@ add_subdirectory(
 SetProjectPaths(spdlog spdlog)
 
 set_property(TARGET spdlog PROPERTY MSVC_RUNTIME_LIBRARY ${PROJECT_RUNTIME})
-target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
 
-DistributeDLL()
+LinkLib(spdlog::spdlog PUBLIC)
