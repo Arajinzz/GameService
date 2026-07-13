@@ -7,10 +7,12 @@ include(../CMake/ProjectOptions.cmake)
 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     # includes
-    include/Example.h
+    include/sIPC.h
+    include/IdGenerator.h
+    include/SharedMemory.h
 
     # sources
-    src/Example.cpp
+    src/sIPC.cpp
 )
 
 # dll or excutable

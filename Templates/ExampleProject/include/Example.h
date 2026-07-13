@@ -1,7 +1,6 @@
 #include "example_export.h"
 
-class EXAMPLE_EXPORT Example
+namespace Example
 {
-public:
-  static void Test();
-};
+  const char* GetVersion();
+}

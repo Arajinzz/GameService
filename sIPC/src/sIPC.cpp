@@ -1,6 +1,6 @@
-#include "Example/include/Example.h"
+#include "sIPC/include/sIPC.h"
 
-namespace Example
+namespace sIPC
 {
   const char* GetVersion()
   {

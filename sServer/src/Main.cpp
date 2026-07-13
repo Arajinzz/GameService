@@ -1,4 +1,4 @@
-#include "sCore/include/Example.h"
+#include "sCore/include/sCore.h"
 #include "spdlog/spdlog.h"
 
 #include <windows.h>
@@ -10,7 +10,7 @@ const DWORD SHM_SIZE = 1024;
 
 int main()
 {
-  Example::Test();
+  std::cout << sCore::GetVersion() << std::endl;
 
   // test spdlog
   spdlog::info("Welcome to spdlog!");

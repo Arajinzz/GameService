@@ -1,6 +1,6 @@
-#include "Example/include/Example.h"
+#include "sCore/include/sCore.h"
 
-namespace Example
+namespace sCore
 {
   const char* GetVersion()
   {

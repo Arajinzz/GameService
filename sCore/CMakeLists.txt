@@ -7,10 +7,10 @@ include(../CMake/ProjectOptions.cmake)
 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     # includes
-    include/Example.h
+    include/sCore.h
 
     # sources
-    src/Example.cpp
+    src/sCore.cpp
 )
 
 # dll or excutable
