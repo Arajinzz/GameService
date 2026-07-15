@@ -8,9 +8,19 @@ include(../CMake/ProjectOptions.cmake)
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     # includes
     include/sCore.h
+    include/Job.h
+    include/JobSystem.h
+    include/Logging.h
+    include/RingBuffer.h
+    include/SingleInstance.h
+    include/SpinLock.h
+    include/Timer.h
+    include/WorkerThread.h
 
     # sources
     src/sCore.cpp
+    src/JobSystem.cpp
+    src/Logging.cpp
 )
 
 # dll or excutable
