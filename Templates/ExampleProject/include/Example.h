@@ -2,5 +2,5 @@
 
 namespace Example
 {
-  const char* GetVersion();
+  EXAMPLE_EXPORT const char* GetVersion();
 }

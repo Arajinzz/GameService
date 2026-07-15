@@ -35,7 +35,7 @@ endfunction()
 
 function(SetProjectOptions target)
     set(BIN_FOLDER 
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/$<IF:$<CONFIG:Debug>,Debug,$<IF:$<CONFIG:Release>,Release,RelWithDebInfo>>")
+        "${CMAKE_BINARY_DIR}/${PROJECT_NAME}/$<IF:$<CONFIG:Debug>,Debug,$<IF:$<CONFIG:Release>,Release,RelWithDebInfo>>")
     set_property(TARGET ${target} PROPERTY MSVC_RUNTIME_LIBRARY ${ENGINE_RUNTIME})
     set_property(TARGET ${target} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${BIN_FOLDER})
     target_link_libraries(${target} PUBLIC PROJECT_OPTIONS)
@@ -80,6 +80,15 @@ function(LinkLib target visibility)
     DistributeDLL(${PROJECT_NAME})
 endfunction()
 
+function(AddSubProject target)
+    if(NOT TARGET ${target})
+        add_subdirectory(
+            ${CMAKE_CURRENT_LIST_DIR}/../${target}
+            ${CMAKE_CURRENT_BINARY_DIR}/${target}
+        )
+    endif()
+endfunction()
+
 function(BuildAsShared PROJECT_SOURCES)
     if(TARGET ${PROJECT_NAME})
         return()
@@ -99,4 +108,11 @@ function(BuildAsExecutable PROJECT_SOURCES)
     source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${PROJECT_SOURCES})
     add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
     message(STATUS "Building as executable ...")
+endfunction()
+
+function(SetDebugCommand target command)
+    set_target_properties(${target} PROPERTIES
+        VS_DEBUGGER_COMMAND "${command}"
+        VS_DEBUGGER_COMMAND_ARGUMENTS "${ARGN}"
+    )
 endfunction()

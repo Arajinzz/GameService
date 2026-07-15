@@ -32,6 +32,8 @@
 *.app
 
 # Build directories
+*/build-visual-studio-26/
+/build-visual-studio-26/
 */build/
 /build/
 /bin/

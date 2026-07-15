@@ -1,6 +1,6 @@
 @echo off
 
-set BUILD_DIR=build
+set BUILD_DIR=build-visual-studio-26
 set GENERATOR="Visual Studio 18 2026"
 set ARCH=-A x64
 

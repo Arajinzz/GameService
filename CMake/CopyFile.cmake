@@ -1,8 +1,0 @@
-if(CONFIG STREQUAL "Debug" OR CONFIG STREQUAL "RelWithDebInfo")
-    if(EXISTS "${SOURCE}")
-        message(STATUS "Copying ${SOURCE} to ${DEST}")
-        get_filename_component(DEST_DIR "${DEST}" DIRECTORY)
-        file(MAKE_DIRECTORY "${DEST_DIR}")
-        file(COPY_FILE "${SOURCE}" "${DEST}")
-    endif()
-endif()
