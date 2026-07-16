@@ -1,19 +1,22 @@
-#include "Example/include/Example.h"
+#include "sServer/include/sServer.h"
 #include "sCore/include/Logging.h"
 
-namespace sIPC
+namespace sServer
 {
   const char* GetName()
   {
-    return "sExample";
+    return "sServer";
   }
 
 #ifdef ENTRY_POINT
   int LaunchDLL()
   {
+    // Setup Logging
+    sCore::LogName::LoggingName = GetName();
+
     LOG_WARN("Hello from {}", GetName());
     return 0;
   }
 #endif
 
-} // namespace Example
+} // namespace sServer

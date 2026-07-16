@@ -42,5 +42,5 @@ namespace sCore
     }
   };
 
-} // namespace WiCore
+} // namespace sCore
 

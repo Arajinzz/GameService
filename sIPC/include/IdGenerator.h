@@ -14,4 +14,5 @@ namespace sIPC
   private:
     inline static std::atomic<uint64_t> counter{ 1 };
   };
-}
+
+} // namespace sIPC

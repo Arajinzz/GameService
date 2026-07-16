@@ -135,4 +135,4 @@ namespace sCore
     WorkerThread& operator=(const WorkerThread&) = delete;
   };
 
-} // namespace WiCore
+} // namespace sCore

@@ -61,5 +61,5 @@ namespace sCore
     return SingleInstance<Class>::Get();
   }
 
-} // namespace WiCore
+} // namespace sCore
 

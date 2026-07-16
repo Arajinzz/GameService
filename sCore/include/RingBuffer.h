@@ -31,26 +31,15 @@ namespace sCore
     void push(DataType data)
     {
       m_spinLock.lock();
-
-#ifdef _DEBUG
-      auto resumed = false;
-#endif
-
       // full
       while (m_availableSpace.load() == 0)
       { // block
         m_waiting.fetch_add(1);
-
 #ifdef _DEBUG
         LOG_WARN("Total waiting jobs to be scheduled is {}", m_waiting.load());
 #endif
         m_spinLock.unlock();
-
         m_semaphore.acquire();
-
-#ifdef _DEBUG
-        resumed = true;
-#endif
         m_spinLock.lock();
       }
 
@@ -107,9 +96,9 @@ namespace sCore
     }
 
   private:
+    SpinLock m_spinLock;
     std::binary_semaphore m_semaphore;
     std::atomic<unsigned> m_waiting;
-    SpinLock m_spinLock;
     std::atomic<unsigned> m_head;
     std::atomic<unsigned> m_tail;
     std::atomic<unsigned> m_availableSpace;
@@ -136,4 +125,4 @@ namespace sCore
 
   };
 
-} // namespace WiCore
+} // namespace sCore

@@ -31,3 +31,19 @@ target_compile_definitions(PROJECT_OPTIONS INTERFACE
     $<$<CONFIG:Debug>:DEBUG_BUILD>
     $<$<CONFIG:RelWithDebInfo>:RELEASE_BUILD>
 )
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+function(CreateUtilitiesProject)
+    if(NOT TARGET ${PROJECT_NAME}_Utilities)
+        set(UtilityName ${PROJECT_NAME}_Utilities)
+        message(STATUS "${UtilityName} created!")
+        get_property(commands GLOBAL PROPERTY SYMLINK_COMMANDS)
+        add_custom_target(${PROJECT_NAME}_Utilities ALL COMMAND ${CMAKE_COMMAND} -E echo "Updating ${UtilityName} ...")
+        set_target_properties(${PROJECT_NAME}_Utilities PROPERTIES FOLDER "CMakeUtilities")
+    endif()
+endfunction()
+
+function(AddDefine DEFINE)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE ${DEFINE})
+endfunction()

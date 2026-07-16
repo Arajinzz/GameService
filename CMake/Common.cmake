@@ -41,7 +41,60 @@ function(SetProjectOptions target)
     target_link_libraries(${target} PUBLIC PROJECT_OPTIONS)
 endfunction()
 
-function(DistributeDLL target)
+function(GetDependencies target result)
+    set(_visited "")
+
+    function(_collect_dependencies current)
+        if(NOT TARGET ${current})
+            return()
+        endif()
+
+        # Avoid infinite loops
+        list(FIND _visited ${current} already_seen)
+        if(NOT already_seen EQUAL -1)
+            return()
+        endif()
+
+        list(APPEND _visited ${current})
+
+        # Get normal linked libraries
+        get_target_property(link_libs ${current} LINK_LIBRARIES)
+
+        # Also get interface dependencies
+        get_target_property(interface_libs ${current} INTERFACE_LINK_LIBRARIES)
+
+        set(all_libs
+            ${link_libs}
+            ${interface_libs}
+        )
+
+        foreach(lib IN LISTS all_libs)
+            # Skip generator expressions for now
+            if(lib MATCHES "^\\$<")
+                continue()
+            endif()
+
+            if(TARGET ${lib})
+                list(APPEND _result ${lib})
+                _collect_dependencies(${lib})
+            endif()
+        endforeach()
+
+        set(_visited ${_visited} PARENT_SCOPE)
+        set(_result ${_result} PARENT_SCOPE)
+    endfunction()
+
+    set(_result "")
+    _collect_dependencies(${target})
+
+    # Remove duplicates
+    list(REMOVE_DUPLICATES _result)
+
+    set(${result} ${_result} PARENT_SCOPE)
+endfunction()
+
+# this has a fatal flaw where, if dependency is changed, the source would not receive the new files
+function(DistributeDLL source target)
     if(NOT TARGET ${target})
         message(FATAL_ERROR "Target ${target} does not exist")
     endif()
@@ -52,12 +105,80 @@ function(DistributeDLL target)
         OR "${type}" STREQUAL "SHARED_LIBRARY"))
         return()
     endif()
-
-    add_custom_command(TARGET ${target} POST_BUILD
+    
+    message(STATUS "${target} dlls will be distributed to ${source}")
+    # transitive dlls, this has to ${source} unlike pdb, lib
+    add_custom_command(TARGET ${source} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_RUNTIME_DLLS:${target}>
-            $<TARGET_FILE_DIR:${target}>
+            $<TARGET_RUNTIME_DLLS:${source}>
+            $<TARGET_FILE_DIR:${source}>
         COMMAND_EXPAND_LISTS
+    )
+    # not transitive
+    GetDependencies(${source} deps)
+    foreach(dep IN LISTS deps)
+        if(NOT ("${type}" STREQUAL "EXECUTABLE"
+            OR "${type}" STREQUAL "SHARED_LIBRARY"))
+            continue()
+        endif()
+        if("${dep}" STREQUAL "PROJECT_OPTIONS")
+            continue()
+        endif()
+        message(STATUS "${dep} pdb will be distributed to ${source}")
+        add_custom_command(TARGET ${source} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_PDB_FILE:${dep}>
+                $<TARGET_FILE_DIR:${source}>
+            COMMAND_EXPAND_LISTS
+        )
+    endforeach()
+    # not needed at runtime
+    #add_custom_command(TARGET ${source} POST_BUILD
+    #    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    #        $<TARGET_LINKER_FILE:${target}>
+    #        $<TARGET_FILE_DIR:${source}>
+    #    COMMAND_EXPAND_LISTS
+    #)
+endfunction()
+
+function(SymLinkLibs)
+    if(NOT TARGET ${PROJECT_NAME})
+        message(FATAL_ERROR "Target ${PROJECT_NAME} does not exist")
+    endif()
+
+    GetDependencies(${PROJECT_NAME} deps)
+
+    set(SYMLINK_COMMANDS)
+    foreach(dep IN LISTS deps)
+        if("${dep}" STREQUAL "PROJECT_OPTIONS")
+            continue()
+        endif()
+        get_target_property(type ${target} TYPE)
+        if(NOT ("${type}" STREQUAL "EXECUTABLE"
+            OR "${type}" STREQUAL "SHARED_LIBRARY"))
+            continue()
+        endif()
+
+        list(APPEND SYMLINK_COMMANDS
+            # delete
+            COMMAND ${CMAKE_COMMAND} -E rm -rf
+                "$<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_FILE_NAME:${dep}>"
+            COMMAND ${CMAKE_COMMAND} -E rm -rf
+                "$<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_PDB_FILE_NAME:${dep}>"
+            # create
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                "$<TARGET_FILE:${dep}>"
+                "$<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_FILE_NAME:${dep}>"
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                "$<TARGET_PDB_FILE:${dep}>"
+                "$<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_PDB_FILE_NAME:${dep}>"
+        )
+    endforeach()
+
+    add_dependencies(${PROJECT_NAME}_Utilities ${PROJECT_NAME})
+    add_custom_command(TARGET ${PROJECT_NAME}_Utilities POST_BUILD
+        ${SYMLINK_COMMANDS}
+        VERBATIM
     )
 endfunction()
 
@@ -76,8 +197,10 @@ function(LinkLib target visibility)
     endif()
 
     target_link_libraries(${PROJECT_NAME} ${visibility} ${target})
+    add_dependencies(${PROJECT_NAME} ${target})
 
-    DistributeDLL(${PROJECT_NAME})
+    #DistributeDLL(${PROJECT_NAME} ${target})
+    SymLinkLibs()
 endfunction()
 
 function(AddSubProject target)

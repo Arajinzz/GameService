@@ -2,11 +2,16 @@
 
 namespace sCore
 {
+  namespace LogName
+  {
+    std::string LoggingName = "console";
+  }
+
   Logging::Logging()
     : m_sink(std::make_shared<spdlog::sinks::stderr_color_sink_mt>())
-    , m_logger(std::make_shared<spdlog::logger>("console", m_sink))
+    , m_logger(std::make_shared<spdlog::logger>(LogName::LoggingName, m_sink))
   {
-    m_logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%s:%#] %v");
+    m_logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%t] [%^%l%$] [%s:%#] %v");
   }
 
   void Logging::LogInfo(const std::string& message, const char* file, int line) const
@@ -40,4 +45,4 @@ namespace sCore
     m_logger->log(loc, spdlog::level::level_enum(level), message);
   }
 
-} // namespace WiCore
+} // namespace sCore

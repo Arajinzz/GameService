@@ -182,4 +182,4 @@ namespace sCore
     std::mutex m_mutex;
   };
 
-} // namespace WiCore
+} // namespace sCore

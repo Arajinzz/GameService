@@ -2,5 +2,13 @@
 
 namespace sCore
 {
-  SCORE_EXPORT const char* GetVersion();
-}
+  SCORE_EXPORT const char* GetName();
+
+#ifdef ENTRY_POINT
+  extern "C"
+  {
+    int SCORE_EXPORT LaunchDLL();
+  }
+#endif
+
+} // namespace sCore

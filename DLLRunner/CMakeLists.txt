@@ -7,10 +7,8 @@ include(../CMake/ProjectOptions.cmake)
 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     # includes
-    include/DLLRunner.h
 
     # sources
-    src/DLLRunner.cpp
     src/Main.cpp
 )
 
@@ -19,5 +17,3 @@ BuildAsExecutable("${PROJECT_SOURCES}")
 SetProjectPaths(${PROJECT_NAME} ${PROJECT_NAME})
 SetTargetIncludes(${PROJECT_NAME})
 SetProjectOptions(${PROJECT_NAME})
-
-# link libraries

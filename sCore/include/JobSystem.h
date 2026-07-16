@@ -45,4 +45,4 @@ namespace sCore
     JobSystem& operator=(const JobSystem&) = delete;
   };
 
-} // namespace WiCore
+} // namespace sCore

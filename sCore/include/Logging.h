@@ -1,12 +1,17 @@
 #pragma once
 
+#include "score_export.h"
+
 // To print filename, line ..etc
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/pattern_formatter.h"
 
 #include <string>
 #include <memory>
+#include <windows.h>
+#include <filesystem>
 
 #define LOG_INFO(msg, ...) \
   sCore::Logging::Instance().LogInfo(std::format(msg, ##__VA_ARGS__), __FILE__, __LINE__)
@@ -21,6 +26,12 @@
 
 namespace sCore
 {
+  // set this before using Logging class to setup a name
+  namespace LogName
+  {
+    extern SCORE_EXPORT std::string LoggingName;
+  }
+
   enum class LogLevel
   {
     Info = spdlog::level::info,
@@ -31,7 +42,7 @@ namespace sCore
   };
 
   // Handles Logging using the spdlog library
-  class Logging
+  class SCORE_EXPORT Logging
   {
   public:
     static Logging& Instance()
@@ -63,4 +74,4 @@ namespace sCore
     Logging& operator=(const Logging&) = delete;
   };
 
-} // namespace WiCore
+} // namespace sCore

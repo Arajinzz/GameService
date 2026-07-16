@@ -13,4 +13,5 @@ namespace sIPC
       std::cout << "New Project!" << std::endl;
     }
   };
-}
+
+} // namespace sIPC

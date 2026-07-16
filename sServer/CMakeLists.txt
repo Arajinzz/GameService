@@ -7,10 +7,10 @@ include(../CMake/ProjectOptions.cmake)
 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     # includes
-    # include/Example.h
+    include/sServer.h
 
     # sources
-    src/Main.cpp
+    src/sServer.cpp
 )
 
 # dll or excutable
@@ -18,12 +18,16 @@ BuildAsShared("${PROJECT_SOURCES}")
 SetProjectPaths(${PROJECT_NAME} ${PROJECT_NAME})
 SetTargetIncludes(${PROJECT_NAME})
 SetProjectOptions(${PROJECT_NAME})
+CreateUtilitiesProject()
 
 LinkLib(sCore PRIVATE)
 LinkLib(sIPC PRIVATE)
 
 # configure dll runner
 include(../CMake/DLLRunner.cmake)
+
+# activate entrypoint
+AddDefine(ENTRY_POINT)
 
 # Startup project
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
