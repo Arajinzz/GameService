@@ -160,18 +160,17 @@ function(SymLinkLibs)
         endif()
 
         list(APPEND SYMLINK_COMMANDS
-            # delete
-            COMMAND ${CMAKE_COMMAND} -E rm -rf
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_FILE_NAME:${dep}>"
-            COMMAND ${CMAKE_COMMAND} -E rm -rf
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_PDB_FILE_NAME:${dep}>"
             # create
             COMMAND ${CMAKE_COMMAND} -E create_symlink
                 "$<TARGET_FILE:${dep}>"
                 "$<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_FILE_NAME:${dep}>"
-            COMMAND ${CMAKE_COMMAND} -E create_symlink
-                "$<TARGET_PDB_FILE:${dep}>"
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_PDB_FILE_NAME:${dep}>"
+            # create PDB
+            COMMAND
+                $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:${CMAKE_COMMAND}>
+                $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:-E>
+                $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:create_symlink>
+                $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:$<TARGET_PDB_FILE:${dep}>>
+                $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:$<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_PDB_FILE_NAME:${dep}>>
         )
     endforeach()
 
