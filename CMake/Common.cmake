@@ -164,6 +164,9 @@ function(SymLinkLibs)
             COMMAND ${CMAKE_COMMAND} -E create_symlink
                 "$<TARGET_FILE:${dep}>"
                 "$<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_FILE_NAME:${dep}>"
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                "$<TARGET_LINKER_FILE:${dep}>"
+                "$<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_LINKER_FILE_NAME:${dep}>"
             # create PDB
             COMMAND
                 $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:${CMAKE_COMMAND}>
