@@ -44,7 +44,7 @@ namespace sCore::Process
 
     // Start the child process. 
     if (!CreateProcessW(
-      options.execPath.c_str(), cmd.data(), NULL, NULL, FALSE, 0, NULL, options.workingDir.c_str(), &si, &pi))
+      options.execPath.c_str(), cmd.data(), NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, options.workingDir.c_str(), &si, &pi))
     {
       DWORD error = GetLastError();
       LPSTR message = nullptr;
@@ -61,6 +61,19 @@ namespace sCore::Process
       throw std::runtime_error(message);
     }
     // success
+    HANDLE hJob = CreateJobObject(nullptr, nullptr);
+
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION info{};
+    info.BasicLimitInformation.LimitFlags =
+      JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+
+    SetInformationJobObject(
+      hJob,
+      JobObjectExtendedLimitInformation,
+      &info,
+      sizeof(info));
+
+    AssignProcessToJobObject(hJob, pi.hProcess);
     return { options.execPath.filename().string() ,pi.hProcess, pi.dwProcessId};
   }
 

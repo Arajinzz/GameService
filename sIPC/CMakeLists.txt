@@ -8,6 +8,7 @@ include(../CMake/ProjectOptions.cmake)
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     # includes
     include/sIPC.h
+    include/Event.h
     include/IdGenerator.h
     include/SharedMemory.h
 

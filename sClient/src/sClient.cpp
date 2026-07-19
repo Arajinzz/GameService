@@ -2,6 +2,7 @@
 #include "sCore/include/sCore.h"
 #include "sCore/include/Logging.h"
 #include "sCore/include/Process.h"
+#include "sIPC/include/Event.h"
 
 namespace sClient
 {
@@ -26,10 +27,29 @@ namespace sClient
     };
 
     auto pHandle = sCore::Process::launch(options);
+    if (!pHandle.handle)
+    { // process is not opened
+      LOG_ERROR("Could not open sServer ... Terminate ...");
+      return 1;
+    }
 
-    auto debug = 0;
-    (void)debug;
+    // server is alive, check heartbeat
+    auto heartbeat = sIPC::SignalReceiver::CreateSignal(sIPC::SignalType::Heartbeat);
+    // wait for 3 secs to receive the first heart beat
+    bool serverAlive = heartbeat->Receive(std::chrono::milliseconds(3000));
+    while (serverAlive)
+    {
+      // check for a heartbeat each 1 second
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+      // poll for a heartbeat
+      serverAlive = heartbeat->Poll();
+      if (serverAlive)
+      {
+        LOG_INFO("Received a heartbeat");
+      }
+    }
 
+    sCore::Process::terminate(pHandle, 0);
     return 0;
   }
 #endif
