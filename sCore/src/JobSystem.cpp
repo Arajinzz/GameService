@@ -32,7 +32,9 @@ namespace sCore
 
   const JobHandlePtr JobSystem::EnqueueJobHelper(WorkType work, std::vector<JobHandlePtr> dependencies, Priority priority)
   {
+#ifndef DISABLE_JOB_GUARD
     JobGuard guard;
+#endif
 
     // create the job handle
     auto handle = JobHandle::CreateJobHandle(work, dependencies);

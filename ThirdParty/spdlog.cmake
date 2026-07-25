@@ -1,4 +1,6 @@
 if(TARGET spdlog)
+    # just link
+    LinkLib(spdlog::spdlog PRIVATE)
     return()
 endif()
 
@@ -21,4 +23,4 @@ SetProjectPaths(spdlog spdlog)
 
 set_property(TARGET spdlog PROPERTY MSVC_RUNTIME_LIBRARY ${PROJECT_RUNTIME})
 
-LinkLib(spdlog::spdlog PUBLIC)
+LinkLib(spdlog::spdlog PRIVATE)

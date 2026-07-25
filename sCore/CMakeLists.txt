@@ -11,7 +11,6 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     include/Job.h
     include/JobSystem.h
     include/Logging.h
-    include/Process.h
     include/RingBuffer.h
     include/SingleInstance.h
     include/SpinLock.h

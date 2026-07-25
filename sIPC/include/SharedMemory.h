@@ -4,14 +4,23 @@
 
 namespace sIPC
 {
-  template <typename MemoryType>
-  class SIPC_EXPORT SharedMemory
+  // DataType has to be trivially copiable
+  template <typename DataType>
+  class SharedMemory
   {
   public:
-    static void Test()
+    explicit SharedMemory()
     {
-      std::cout << "New Project!" << std::endl;
     }
+
+    ~SharedMemory()
+    {
+    }
+
+  private:
+    // delete copy and assignment
+    SharedMemory(const SharedMemory&) = delete;
+    SharedMemory& operator=(const SharedMemory&) = delete;
   };
 
 } // namespace sIPC

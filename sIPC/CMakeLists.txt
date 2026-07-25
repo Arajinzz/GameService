@@ -9,8 +9,13 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     # includes
     include/sIPC.h
     include/Event.h
+    include/Message.h
+    include/Process.h
     include/IdGenerator.h
+    include/Lock.h
     include/SharedMemory.h
+    include/RingBuffer.h
+    include/Windows.h
 
     # sources
     src/sIPC.cpp
@@ -27,7 +32,10 @@ CreateUtilitiesProject()
 include(../CMake/DLLRunner.cmake)
 
 # link libraries
-LinkLib(sCore PUBLIC)
+LinkLib(sCore PRIVATE)
+
+# link thirdparty
+include(../ThirdParty/spdlog.cmake)
 
 # activate entrypoint
 # AddDefine(ENTRY_POINT)

@@ -7,10 +7,10 @@ include(../CMake/ProjectOptions.cmake)
 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     # includes
-    include/Example.h
+    include/${PROJECT_NAME}.h
 
     # sources
-    src/Example.cpp
+    src/${PROJECT_NAME}.cpp
 )
 
 # dll or excutable
@@ -24,7 +24,7 @@ SetProjectOptions(${PROJECT_NAME})
 include(../CMake/DLLRunner.cmake)
 
 # link libraries
-# LinkLib(sCore PUBLIC)
+# LinkLib(sCore PRIVATE)
 
 # link thirdparty
 # include(../ThirdParty/spdlog.cmake)

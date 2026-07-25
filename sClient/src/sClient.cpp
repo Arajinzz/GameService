@@ -1,7 +1,7 @@
 #include "sClient/include/sClient.h"
 #include "sCore/include/sCore.h"
 #include "sCore/include/Logging.h"
-#include "sCore/include/Process.h"
+#include "sIPC/include/Process.h"
 #include "sIPC/include/Event.h"
 
 namespace sClient
@@ -20,13 +20,13 @@ namespace sClient
     LOG_WARN("Hello from {}", GetName());
     LOG_WARN("Hello from {}", sCore::GetName());
 
-    sCore::Process::LaunchOptions options = {
+    sIPC::Process::LaunchOptions options = {
       .execPath = std::filesystem::path("DLLRunner/DLLRunner.exe"),
       .workingDir = std::filesystem::current_path(),
       .args = std::vector<std::wstring>({L"--dll ../sServer.dll"})
     };
 
-    auto pHandle = sCore::Process::launch(options);
+    auto pHandle = sIPC::Process::launch(options);
     if (!pHandle.handle)
     { // process is not opened
       LOG_ERROR("Could not open sServer ... Terminate ...");
@@ -49,7 +49,7 @@ namespace sClient
       }
     }
 
-    sCore::Process::terminate(pHandle, 0);
+    sIPC::Process::terminate(pHandle, 0);
     return 0;
   }
 #endif

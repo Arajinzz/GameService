@@ -20,4 +20,4 @@ SetProjectPaths(JoltPhysics JoltPhysics)
 
 set_property(TARGET JoltPhysics PROPERTY MSVC_RUNTIME_LIBRARY ${PROJECT_RUNTIME})
 
-LinkLib(JoltPhysics PUBLIC)
+LinkLib(JoltPhysics PRIVATE)

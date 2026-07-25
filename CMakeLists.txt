@@ -5,6 +5,7 @@ project(GameService LANGUAGES CXX)
 add_subdirectory(DLLRunner)
 add_subdirectory(sCore)
 add_subdirectory(sIPC)
+add_subdirectory(sService)
 add_subdirectory(sServer)
 add_subdirectory(sClient)
 

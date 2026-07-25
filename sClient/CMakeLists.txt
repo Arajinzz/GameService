@@ -20,12 +20,15 @@ SetTargetIncludes(${PROJECT_NAME})
 SetProjectOptions(${PROJECT_NAME})
 CreateUtilitiesProject()
 
+# configure dll runner
+include(../CMake/DLLRunner.cmake)
+
 LinkLib(sCore PRIVATE)
 LinkLib(sIPC PRIVATE)
 LinkLib(sServer PRIVATE)
 
-# configure dll runner
-include(../CMake/DLLRunner.cmake)
+# link thirdparty
+include(../ThirdParty/spdlog.cmake)
 
 # activate entrypoint
 AddDefine(ENTRY_POINT)

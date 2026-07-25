@@ -13,7 +13,6 @@ namespace sIPC
   enum class SignalType
   {
     Heartbeat,
-    Shutdown
   };
 
   constexpr const char* ToName(SignalType type)
@@ -22,8 +21,6 @@ namespace sIPC
     {
     case SignalType::Heartbeat:
       return "Local\\Heartbeat";
-    case SignalType::Shutdown:
-      return "Local\\Shutdown";
     }
     return "";
   }
@@ -72,6 +69,11 @@ namespace sIPC
   private:
     HANDLE m_eventHandle;
     SignalType m_signalType;
+
+  private:
+    // delete copy and assignment
+    SignalEmitter(const SignalEmitter&) = delete;
+    SignalEmitter& operator=(const SignalEmitter&) = delete;
   };
 
   class SignalReceiver
@@ -146,6 +148,11 @@ namespace sIPC
   private:
     HANDLE m_eventHandle;
     SignalType m_signalType;
+
+  private:
+    // delete copy and assignment
+    SignalReceiver(const SignalReceiver&) = delete;
+    SignalReceiver& operator=(const SignalReceiver&) = delete;
   };
 
 } // namespace sIPC

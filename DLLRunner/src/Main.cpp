@@ -1,5 +1,6 @@
 #include <iostream>
 #include <windows.h>
+#include <filesystem>
 
 int main(int argc, char* argv[])
 {
@@ -19,6 +20,10 @@ int main(int argc, char* argv[])
   }
 
   std::cout << "Trying to launch " << argv[2] << std::endl;
+  
+  // set console title
+  std::filesystem::path dllPath(argv[2]);
+  SetConsoleTitleW(dllPath.filename().c_str());
 
   using LaunchFunc = int (*)();
   LaunchFunc LaunchDLL = reinterpret_cast<LaunchFunc>(

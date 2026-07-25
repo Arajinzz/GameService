@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <mutex>
 
+#define DISABLE_JOB_GUARD
+
 namespace sCore
 {
   class JobSystem;
@@ -102,8 +104,10 @@ namespace sCore
 
     void ExecuteJob()
     {
+#ifndef DISABLE_JOB_GUARD
       // another instance of this is created when we queue jobs
       JobGuard guard; // to guard against nested jobs
+#endif
       if (m_job)
         m_job();
 
