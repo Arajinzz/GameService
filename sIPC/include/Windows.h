@@ -10,6 +10,88 @@
 
 namespace sIPC::Windows
 {
+  struct WinHandle
+  {
+    HANDLE value;
+
+    WinHandle()
+      : value(0)
+    {
+    }
+
+    WinHandle(HANDLE handle)
+      : value(handle)
+    {
+    }
+
+    WinHandle(WinHandle&& other) noexcept
+      : value(other.value)
+    {
+      // when we move let's release ownership
+      other.value = 0;
+    }
+    WinHandle& operator=(WinHandle&& other) noexcept
+    {
+      value = other.value;
+      if (this != &other)
+        other.value = 0;
+      return *this;
+    }
+
+    ~WinHandle()
+    {
+      if (value)
+        CloseHandle(value);
+    }
+  };
+
+  struct SharedMemoryHandle
+  {
+    void* mappedAddress;
+    WinHandle winHandle;
+
+    SharedMemoryHandle()
+      : mappedAddress(0)
+      , winHandle(0)
+    {
+    }
+
+    SharedMemoryHandle(HANDLE handle, void* map)
+      : mappedAddress(map)
+      , winHandle(handle)
+    {
+    }
+
+    SharedMemoryHandle(SharedMemoryHandle&& other) noexcept
+      : mappedAddress(other.mappedAddress)
+      , winHandle(std::move(other.winHandle))
+    {
+      // when we move let's release ownership
+      other.mappedAddress = nullptr;
+      // we don't need to release the win handle, because it is already moved
+    }
+
+    SharedMemoryHandle& operator=(SharedMemoryHandle&& other) noexcept
+    {
+      mappedAddress = other.mappedAddress;
+      winHandle = std::move(other.winHandle);
+      if (this != &other)
+        other.mappedAddress = nullptr;
+      return *this;
+    }
+
+    ~SharedMemoryHandle()
+    {
+      if (mappedAddress)
+        UnmapViewOfFile(mappedAddress);
+    }
+
+    bool Valid()
+    {
+      return mappedAddress != nullptr && winHandle.value != 0;
+    }
+  };
+
   std::string GetWindowsLastError()
   {
     DWORD error = GetLastError();
@@ -27,11 +109,43 @@ namespace sIPC::Windows
     return std::string(message);
   }
 
-  HANDLE CreateWindowsMutex()
+  WinHandle DuplicateWindowsHandle(HANDLE toDuplicate, const HANDLE& toProcess)
   {
-    auto handle = CreateMutex(NULL, FALSE, NULL);
-    CloseHandle(handle);
-    return handle;
+    HANDLE remoteHandle;
+    if (DuplicateHandle(
+      GetCurrentProcess(), toDuplicate, toProcess, &remoteHandle, FILE_MAP_ALL_ACCESS, FALSE,0))
+    {
+      LOG_ERROR("could not duplicate handle");
+    }
+    return remoteHandle;
+  }
+
+  template <typename Type>
+  SharedMemoryHandle AllocateSharedMemory(const std::string& name)
+  {
+    static_assert(std::is_trivially_copyable_v<Type>);
+    static_assert(std::is_standard_layout_v<Type>);
+
+    name.empty() ? LOG_INFO("Creating unnamed shared memory")
+      : LOG_INFO("Creating named shared memory with name {}", name);
+
+    // create the shared memory
+    auto handle = CreateFileMapping(
+      INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(Type), name.empty() ? NULL : name.c_str());
+    if (handle == 0)
+    {
+      LOG_CRITICAL("could not create shared memory {}", sIPC::Windows::GetWindowsLastError());
+      return SharedMemoryHandle(handle, nullptr);
+    }
+
+    auto mapped = MapViewOfFile(handle, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(Type));
+    if (!mapped)
+    {
+      LOG_CRITICAL("could not map shared memory {}", sIPC::Windows::GetWindowsLastError());
+      CloseHandle(handle);
+    }
+
+    return SharedMemoryHandle(handle, mapped);
   }
 
 } // namespace sCore

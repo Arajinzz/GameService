@@ -3,7 +3,14 @@
 #include "sservice_export.h"
 
 #include "sIPC/include/Process.h"
+#include "sIPC/include/SharedMemory.h"
 #include "sCore/include/SingleInstance.h"
+
+// defines meta data of this service
+struct ServiceMetaData
+{
+  unsigned pid;
+};
 
 namespace sService
 {
@@ -18,18 +25,24 @@ namespace sService
     explicit Service(const std::filesystem::path& dllRunner, const std::filesystem::path& workingDir);
     virtual ~Service();
 
+    // Id of the service
+    const std::string& Id();
+
     // lifetime
     void Initialize();
+    void Run();
     void Destroy();
 
     // connect other services
     void connectService(const std::filesystem::path& modulePath);
 
   private:
+    std::string m_serviceId;
     std::filesystem::path m_dllRunnerPath;
     std::filesystem::path m_dllRunnerWorkingDir;
     std::vector<sIPC::Process::ProcessHandle> m_ownedServices;
     std::vector<sIPC::Process::ProcessHandle> m_openedServices;
+    sIPC::SharedMemory<ServiceMetaData> m_metaData;
 
   private:
     // delete copy and assignment

@@ -92,7 +92,7 @@ namespace sIPC::Process
     if (Process32First(hSnap, &pe))
       do
       {
-        // skip me
+        // skip meb
         if (GetCurrentProcessId() == pe.th32ProcessID)
           continue;
 
@@ -186,6 +186,16 @@ namespace sIPC::Process
   bool running(const ProcessHandle& pHandle)
   {
     return exitCode(pHandle) == STILL_ACTIVE;
+  }
+
+  unsigned long processId(HANDLE pHandle)
+  {
+    return GetProcessId(pHandle);
+  }
+
+  unsigned long currentProcessId()
+  {
+    return processId(GetCurrentProcess());
   }
 
 } // namespace sCore

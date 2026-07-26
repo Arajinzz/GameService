@@ -3,10 +3,12 @@
 namespace sService
 {
   Service::Service(const std::filesystem::path& dllRunner, const std::filesystem::path& workingDir)
-    : m_dllRunnerPath(dllRunner)
+    : m_serviceId(std::format("{}-{}", "Service", sIPC::Process::currentProcessId()))
+    , m_dllRunnerPath(dllRunner)
     , m_dllRunnerWorkingDir(workingDir)
     , m_ownedServices()
     , m_openedServices()
+    , m_metaData(m_serviceId)
   {
     if (!std::filesystem::exists(dllRunner) || !dllRunner.has_filename())
       throw std::runtime_error("path to dllrunner is not valid");
@@ -16,9 +18,20 @@ namespace sService
   {
   }
 
+  const std::string& Service::Id()
+  {
+    return m_serviceId;
+  }
+
   void Service::Initialize()
   {
     LOG_INFO("Initialize Service");
+    // fill the shared meta data
+    m_metaData->pid = sIPC::Process::currentProcessId();
+  }
+
+  void Service::Run()
+  {
   }
 
   void Service::Destroy()

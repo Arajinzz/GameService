@@ -11,7 +11,6 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     include/Event.h
     include/Message.h
     include/Process.h
-    include/IdGenerator.h
     include/Lock.h
     include/SharedMemory.h
     include/RingBuffer.h
