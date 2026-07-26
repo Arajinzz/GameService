@@ -3,6 +3,7 @@
 #include "sCore/include/Logging.h"
 #include "sIPC/include/Process.h"
 #include "sIPC/include/Event.h"
+#include "sService/include/Service.h"
 
 namespace sClient
 {
@@ -20,18 +21,10 @@ namespace sClient
     LOG_WARN("Hello from {}", GetName());
     LOG_WARN("Hello from {}", sCore::GetName());
 
-    sIPC::Process::LaunchOptions options = {
-      .execPath = std::filesystem::path("DLLRunner/DLLRunner.exe"),
-      .workingDir = std::filesystem::current_path(),
-      .args = std::vector<std::wstring>({L"--dll ../sServer.dll"})
-    };
-
-    auto pHandle = sIPC::Process::launch(options);
-    if (!pHandle.handle)
-    { // process is not opened
-      LOG_ERROR("Could not open sServer ... Terminate ...");
-      return 1;
-    }
+    std::shared_ptr<sService::Service> service = std::make_shared<sService::Service>(
+      std::filesystem::path("DLLRunner/DLLRunner.exe"), std::filesystem::current_path());
+    service->Initialize();
+    service->connectService(std::filesystem::current_path() / std::filesystem::path("sServer.dll"));
 
     // server is alive, check heartbeat
     auto heartbeat = sIPC::SignalReceiver::CreateSignal(sIPC::SignalType::Heartbeat);
@@ -49,7 +42,9 @@ namespace sClient
       }
     }
 
-    sIPC::Process::terminate(pHandle, 0);
+    // destroy
+    service->Destroy();
+
     return 0;
   }
 #endif

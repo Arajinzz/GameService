@@ -17,6 +17,29 @@ namespace sIPC::Process
     HANDLE handle;
     unsigned long pid;
 
+    ProcessHandle()
+      : name()
+      , handle(0)
+      , pid(0)
+    {
+    }
+
+    ProcessHandle(const std::string& name, HANDLE handle, unsigned processId)
+      : name(name)
+      , handle(handle)
+      , pid(processId)
+    {
+    }
+
+    ProcessHandle(ProcessHandle&& other) noexcept
+      : handle(other.handle)
+      , name(other.name)
+      , pid(other.pid)
+    {
+      // when we move let's release ownership
+      other.handle = 0;
+    }
+
     ~ProcessHandle()
     {
       if (handle)
@@ -69,6 +92,10 @@ namespace sIPC::Process
     if (Process32First(hSnap, &pe))
       do
       {
+        // skip me
+        if (GetCurrentProcessId() == pe.th32ProcessID)
+          continue;
+
         if (found)
         {
           LOG_WARN("Multiple process that meets the criteria have been found!");
@@ -81,7 +108,9 @@ namespace sIPC::Process
           if (processHasModule(pe.th32ProcessID, moduleName))
           { // open process
             HANDLE hProcess = OpenProcess(PROCESS_DUP_HANDLE, FALSE, pe.th32ProcessID);
-            pHandle = { processName + moduleName, hProcess, pe.th32ProcessID };
+            pHandle.name = processName + moduleName;
+            pHandle.handle = hProcess;
+            pHandle.pid = pe.th32ProcessID;
             found = true;
           }
       } while (Process32Next(hSnap, &pe));
@@ -114,7 +143,9 @@ namespace sIPC::Process
     info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
     SetInformationJobObject(hJob, JobObjectExtendedLimitInformation, &info, sizeof(info));
     AssignProcessToJobObject(hJob, pi.hProcess);
-    return { options.execPath.filename().string() ,pi.hProcess, pi.dwProcessId };
+
+
+    return ProcessHandle(options.execPath.filename().string() ,pi.hProcess, pi.dwProcessId);
   }
 
   // kill a process

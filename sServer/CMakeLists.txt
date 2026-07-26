@@ -25,6 +25,7 @@ include(../CMake/DLLRunner.cmake)
 
 LinkLib(sCore PRIVATE)
 LinkLib(sIPC PRIVATE)
+LinkLib(sService PRIVATE)
 
 # link thirdparty
 include(../ThirdParty/spdlog.cmake)

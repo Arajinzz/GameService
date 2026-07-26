@@ -7,9 +7,11 @@ include(../CMake/ProjectOptions.cmake)
 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     # includes
+    include/Service.h
     include/${PROJECT_NAME}.h
 
     # sources
+    src/Service.cpp
     src/${PROJECT_NAME}.cpp
 )
 
@@ -25,6 +27,7 @@ include(../CMake/DLLRunner.cmake)
 
 # link libraries
 LinkLib(sCore PRIVATE)
+LinkLib(sIPC PRIVATE)
 
 # link thirdparty
 include(../ThirdParty/spdlog.cmake)
