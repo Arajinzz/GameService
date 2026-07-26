@@ -30,6 +30,7 @@ namespace sIPC::Windows
       // when we move let's release ownership
       other.value = 0;
     }
+
     WinHandle& operator=(WinHandle&& other) noexcept
     {
       value = other.value;
@@ -51,7 +52,7 @@ namespace sIPC::Windows
     WinHandle winHandle;
 
     SharedMemoryHandle()
-      : mappedAddress(0)
+      : mappedAddress(nullptr)
       , winHandle(0)
     {
     }
@@ -112,12 +113,12 @@ namespace sIPC::Windows
   WinHandle DuplicateWindowsHandle(HANDLE toDuplicate, const HANDLE& toProcess)
   {
     HANDLE remoteHandle;
-    if (DuplicateHandle(
+    if (!DuplicateHandle(
       GetCurrentProcess(), toDuplicate, toProcess, &remoteHandle, FILE_MAP_ALL_ACCESS, FALSE,0))
     {
-      LOG_ERROR("could not duplicate handle");
+      LOG_ERROR("could not duplicate handle {}", GetWindowsLastError());
     }
-    return remoteHandle;
+    return WinHandle(remoteHandle);
   }
 
   template <typename Type>
@@ -135,7 +136,7 @@ namespace sIPC::Windows
     if (handle == 0)
     {
       LOG_CRITICAL("could not create shared memory {}", sIPC::Windows::GetWindowsLastError());
-      return SharedMemoryHandle(handle, nullptr);
+      return SharedMemoryHandle();
     }
 
     auto mapped = MapViewOfFile(handle, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(Type));
@@ -145,6 +146,40 @@ namespace sIPC::Windows
       CloseHandle(handle);
     }
 
+    return SharedMemoryHandle(handle, mapped);
+  }
+
+  template <typename Type>
+  SharedMemoryHandle ReadSharedMemory(const std::string& name)
+  {
+    static_assert(std::is_trivially_copyable_v<Type>);
+    static_assert(std::is_standard_layout_v<Type>);
+
+    if (name.empty())
+      return SharedMemoryHandle();
+    // open
+    auto handle = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, name.c_str());
+    if (handle == 0)
+    {
+      LOG_CRITICAL("could not open shared memory {}", sIPC::Windows::GetWindowsLastError());
+      return SharedMemoryHandle();
+    }
+    // get data pointer
+    auto mapped = MapViewOfFile(handle, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(Type));
+    if (!mapped)
+    {
+      LOG_CRITICAL("could not map shared memory {}", sIPC::Windows::GetWindowsLastError());
+      CloseHandle(handle);
+      return SharedMemoryHandle();
+    }
+    // is it the correct type
+    if (!static_cast<Type*>(mapped))
+    {
+      LOG_CRITICAL("could not cast the mapped shared memory to the specified type");
+      UnmapViewOfFile(mapped);
+      CloseHandle(handle);
+      return SharedMemoryHandle();
+    }
     return SharedMemoryHandle(handle, mapped);
   }
 

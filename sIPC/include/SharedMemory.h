@@ -23,7 +23,7 @@ namespace sIPC
       static_assert(std::is_trivially_copyable_v<DataType>);
       static_assert(std::is_standard_layout_v<DataType>);
       // allocate the shared memory
-      m_handle = std::move(sIPC::Windows::AllocateSharedMemory<DataType>(name));
+      m_handle = sIPC::Windows::AllocateSharedMemory<DataType>(name);
       // construct it
       if (m_handle.Valid())
         m_data = new (m_handle.mappedAddress) DataType(std::forward<Args>(args)...);
@@ -36,14 +36,14 @@ namespace sIPC
 
     bool Valid()
     {
-      return m_handle != 0;
+      return m_handle.Valid();
     }
 
     void DuplicateToProcess(const sIPC::Windows::WinHandle& target)
     {
       auto duplicated = sIPC::Windows::DuplicateWindowsHandle(m_handle.winHandle.value, target.value);
-      if (duplicated.Valid())
-        m_duplicated.emplace(std::move(duplicated));
+      if (duplicated.value != 0)
+        m_duplicated.push_back(std::move(duplicated));
     }
 
     // operator overloading for easy access
@@ -54,7 +54,7 @@ namespace sIPC
     sIPC::Windows::SharedMemoryHandle m_handle;
     DataType* m_data;
     std::string m_name;
-    std::set<sIPC::Windows::WinHandle> m_duplicated;
+    std::vector<sIPC::Windows::WinHandle> m_duplicated;
 
   private:
     // delete copy and assignment

@@ -14,7 +14,7 @@ namespace sIPC::Process
   struct ProcessHandle
   {
     std::string name;
-    HANDLE handle;
+    Windows::WinHandle handle;
     unsigned long pid;
 
     ProcessHandle()
@@ -32,23 +32,27 @@ namespace sIPC::Process
     }
 
     ProcessHandle(ProcessHandle&& other) noexcept
-      : handle(other.handle)
+      : handle(std::move(other.handle))
       , name(other.name)
       , pid(other.pid)
     {
-      // when we move let's release ownership
-      other.handle = 0;
+    }
+
+    ProcessHandle& operator=(ProcessHandle&& other) noexcept
+    {
+      handle = std::move(other.handle);
+      name = std::move(other.name);
+      pid = other.pid;
+      return *this;
     }
 
     ~ProcessHandle()
     {
-      if (handle)
-        CloseHandle(handle);
     }
 
     bool Valid()
     {
-      return handle != 0;
+      return handle.value != 0;
     }
   };
 
@@ -145,20 +149,20 @@ namespace sIPC::Process
     AssignProcessToJobObject(hJob, pi.hProcess);
 
 
-    return ProcessHandle(options.execPath.filename().string() ,pi.hProcess, pi.dwProcessId);
+    return ProcessHandle(options.execPath.filename().string(), pi.hProcess, pi.dwProcessId);
   }
 
   // kill a process
   void terminate(
-    const ProcessHandle& pHandle, unsigned exitCode = 1, std::chrono::seconds timeout = std::chrono::seconds(1))
+    const ProcessHandle& pHandle, unsigned exitCode = 1, std::chrono::milliseconds timeout = std::chrono::milliseconds(1))
   {
-    if (!TerminateProcess(pHandle.handle, exitCode))
+    if (!TerminateProcess(pHandle.handle.value, exitCode))
     {
       LOG_ERROR("process {} failed to terminate.", pHandle.name);
       return;
     }
 
-    auto result = WaitForSingleObject(pHandle.handle, static_cast<unsigned long>(timeout.count()));
+    auto result = WaitForSingleObject(pHandle.handle.value, static_cast<unsigned long>(timeout.count()));
     switch (result)
     {
     case WAIT_OBJECT_0:
@@ -177,7 +181,7 @@ namespace sIPC::Process
   uint32_t exitCode(const ProcessHandle& pHandle)
   {
     DWORD exitCode;
-    if (!GetExitCodeProcess(pHandle.handle, &exitCode))
+    if (!GetExitCodeProcess(pHandle.handle.value, &exitCode))
       return EXCEPTION_INVALID_HANDLE;
     return exitCode;
   }

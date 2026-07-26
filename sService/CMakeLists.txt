@@ -7,6 +7,7 @@ include(../CMake/ProjectOptions.cmake)
 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     # includes
+    include/Utils.h
     include/Service.h
     include/${PROJECT_NAME}.h
 
