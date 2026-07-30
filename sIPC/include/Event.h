@@ -1,158 +1,94 @@
 #pragma once
 
 #include "sipc_export.h"
-#include "sCore/include/Logging.h"
-
 #include <windows.h>
 #include <string.h>
 #include <chrono>
 #include <memory>
 
+#include "sCore/include/Logging.h"
+#include "sIPC/include/Windows.h"
+#include "sIPC/include/IPCObject.h"
+#include "sIPC/include/Handle.h"
+
 namespace sIPC
 {
-  enum class SignalType
+  struct EventData
   {
-    Heartbeat,
+    HANDLE handle = 0;
   };
 
-  constexpr const char* ToName(SignalType type)
-  {
-    switch (type)
-    {
-    case SignalType::Heartbeat:
-      return "Local\\Heartbeat";
-    }
-    return "";
-  }
-
-  class SignalEmitter
+  class EventLogic : public IPCObject
   {
   public:
-    static std::shared_ptr<SignalEmitter> CreateSignal(const SignalType& type)
+    explicit EventLogic(EventData* data)
+      : IPCObject()
+      , m_data(data)
+      , m_owner(false)
     {
-      // Workaround to create shared_ptr out of JobHandle with protected constructor
-      struct EnableSharedPtr : public SignalEmitter
+      // already exists
+      m_owner = m_data->handle == 0;
+      if (!m_data->handle)
+        m_handle = sIPC::Windows::CreateWindowsEvent();
+      else
       {
-      public:
-        EnableSharedPtr(const SignalType& type)
-          : SignalEmitter(type)
-        {
-        }
-      };
-      return std::make_shared<EnableSharedPtr>(type);
+        m_handle = CreateWinHandle(m_data->handle, false);
+      }
+      m_data->handle = m_handle.get();
     }
 
-    virtual ~SignalEmitter()
+    virtual ~EventLogic()
     {
-      CloseHandle(m_eventHandle);
     }
 
     void Emit()
     {
-      SetEvent(m_eventHandle);
-    }
-
-  protected:
-    explicit SignalEmitter(const SignalType& sigType)
-      : m_signalType(sigType)
-    {
-      const char* signalName = ToName(m_signalType);
-      m_eventHandle = CreateEventA(nullptr, FALSE, FALSE, signalName);
-      if (!m_eventHandle)
-      {
-        // it shouldn't fail
-        LOG_WARN("Failed to create Signal {}", signalName);
-        throw std::runtime_error("failed to create signal");
-      }
-    }
-
-  private:
-    HANDLE m_eventHandle;
-    SignalType m_signalType;
-
-  private:
-    // delete copy and assignment
-    SignalEmitter(const SignalEmitter&) = delete;
-    SignalEmitter& operator=(const SignalEmitter&) = delete;
-  };
-
-  class SignalReceiver
-  {
-  public:
-    static std::shared_ptr<SignalReceiver> CreateSignal(const SignalType& type)
-    {
-      // Workaround to create shared_ptr out of JobHandle with protected constructor
-      struct EnableSharedPtr : public SignalReceiver
-      {
-      public:
-        EnableSharedPtr(const SignalType& type)
-          : SignalReceiver(type)
-        {
-        }
-      };
-      return std::make_shared<EnableSharedPtr>(type);
-    }
-
-    virtual ~SignalReceiver()
-    {
-      CloseHandle(m_eventHandle);
+      if (!m_owner)
+        LOG_WARN("Trying to emit an event but you are not the owner");
+      // only the owner can emit
+      if (m_owner)
+        SetEvent(m_handle.get());
     }
 
     bool Receive(std::chrono::milliseconds timeout)
     {
       // block
-      auto start = std::chrono::steady_clock::now();
-      while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count() <= timeout.count())
+      if (!m_handle.get())
+        LOG_WARN("invalid signal cannot be received, trying to reopen signal");
+      auto result = WaitForSingleObject(m_handle.get(), (DWORD)timeout.count());
+      if (result == WAIT_OBJECT_0)
+        return true;
+      switch (result)
       {
-        if (!m_eventHandle)
-        {
-          LOG_WARN("invalid signal cannot be received, trying to reopen signal");
-          OpenSignal();
-        }
-        if (WaitForSingleObject(m_eventHandle, INFINITE) == WAIT_OBJECT_0)
-          return true;
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      case WAIT_TIMEOUT:
+        LOG_ERROR("timeout.");
+        break;
+      case WAIT_FAILED:
+        LOG_ERROR("failed {}.", sIPC::Windows::GetWindowsLastError());
+        break;
       }
       return false;
     }
 
     bool Poll()
     {
-      if (!m_eventHandle)
+      if (!m_handle.get())
       {
         LOG_WARN("invalid signal cannot be polled, trying to reopen signal");
-        OpenSignal();
         return false;
       }
       // don't block
-      return WaitForSingleObject(m_eventHandle, 0) == WAIT_OBJECT_0;
-    }
-
-  protected:
-    explicit SignalReceiver(const SignalType& sigType)
-      : m_signalType(sigType)
-    {
-      OpenSignal();
-    }
-    
-    void OpenSignal()
-    {
-      const char* signalName = ToName(m_signalType);
-      m_eventHandle = OpenEventA(SYNCHRONIZE, FALSE, signalName);
-      if (!m_eventHandle)
-      {
-        LOG_WARN("Failed to open Signal {}", signalName);
-      }
+      return WaitForSingleObject(m_handle.get(), 0) == WAIT_OBJECT_0;
     }
 
   private:
-    HANDLE m_eventHandle;
-    SignalType m_signalType;
+    bool m_owner;
+    EventData* m_data;
 
   private:
     // delete copy and assignment
-    SignalReceiver(const SignalReceiver&) = delete;
-    SignalReceiver& operator=(const SignalReceiver&) = delete;
+    EventLogic(const EventLogic&) = delete;
+    EventLogic& operator=(const EventLogic&) = delete;
   };
 
 } // namespace sIPC

@@ -4,12 +4,14 @@
 namespace sService
 {
   Service::Service(const std::filesystem::path& dllRunner, const std::filesystem::path& workingDir)
-    : m_serviceId(std::format("{}-{}", "Service", sIPC::Process::currentProcessId()))
+    : m_running(true)
+    , m_serviceId(std::format("{}-{}", "Service", sIPC::Process::currentProcessId()))
     , m_dllRunnerPath(dllRunner)
     , m_dllRunnerWorkingDir(workingDir)
     , m_ownedServices()
     , m_openedServices()
     , m_metaData(m_serviceId)
+    , m_heartbeat()
   {
     if (!std::filesystem::exists(dllRunner) || !dllRunner.has_filename())
       throw std::runtime_error("path to dllrunner is not valid");
@@ -28,18 +30,74 @@ namespace sService
   {
     LOG_INFO("Initialize Service");
     // fill the shared meta data
-    m_metaData->pid = sIPC::Process::currentProcessId();
+    m_metaData->SetPid(sIPC::Process::currentProcessId());
   }
 
   void Service::Run()
   {
+    // run the main loop
+    while (m_running)
+    {
+      for (unsigned i = 0; i < m_metaData->GetProcessCount(); ++i)
+      {
+        auto [pid, heartbeat] = m_metaData->GetProcessInfo(i);
+        LOG_INFO("Process {} Connected!", pid);
+        if (heartbeat)
+        {
+          LOG_INFO("Heartbeat is valid!");
+          // create the logic class
+          sIPC::EventData data{ heartbeat };
+          sIPC::EventLogic theHeartbeat(&data);
+          bool alive = theHeartbeat.Receive(std::chrono::milliseconds(1000));
+          if (alive)
+            LOG_INFO("process {} is alive", pid);
+        }
+        // let's connect back
+        if (m_ownedServices.contains(pid) || m_openedServices.contains(pid))
+          continue;
+        openService(pid);
+      }
+      m_heartbeat->Emit();
+      // check for a heartbeat each 1 second
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    }
   }
 
   void Service::Destroy()
   {
     LOG_INFO("Destroy Service");
-    for (auto& serviceHandle : m_ownedServices)
+    for (auto& [_, serviceHandle] : m_ownedServices)
       sIPC::Process::terminate(serviceHandle, 0);
+  }
+
+  void Service::openService(unsigned pid)
+  {
+    sIPC::WinHandle pHandle;
+    try
+    { // first let's try to open the service
+      pHandle = sIPC::Process::open(pid);
+      // now we poll for the target service meta data
+      if (
+        PollFor([this, &pHandle, pid]() {
+          auto targetId = std::format("{}-{}", "Service", sIPC::Process::processId(pHandle.get()));
+          auto [handle, memory] = sIPC::Windows::ReadSharedMemory<ServiceMetaData>(targetId);
+          auto targetMeta = sIPC::SharedMemory<ServiceMetaData, ServiceMetaLogic>(handle);
+          if (targetMeta.Valid())
+          { // cast
+            LOG_INFO("Connected to Service with PID {}", targetMeta->GetPid());
+            // I give my heart to the other process
+            targetMeta->AddProcess(sIPC::Process::currentProcessId(), m_heartbeat->DuplicateToProcess(pHandle));
+          }
+          return handle.get();
+          }))
+      { // store
+        m_openedServices[sIPC::Process::processId(pHandle.get())] = pHandle;
+      }
+    }
+    catch (const std::exception& e)
+    {
+      LOG_WARN("{}", e.what());
+    }
   }
 
   void Service::connectService(const std::filesystem::path& modulePath)
@@ -49,11 +107,11 @@ namespace sService
 
     auto serviceCreated = false;
     auto serviceOpened = false;
-    sIPC::Process::ProcessHandle pHandle;
+    sIPC::WinHandle pHandle;
     try
     { // first let's try to open the service
       pHandle = sIPC::Process::open(m_dllRunnerPath.filename().string(), modulePath.filename().string());
-      serviceOpened = pHandle.Valid();
+      serviceOpened = pHandle.get() != 0;
     }
     catch (const std::exception& e)
     {
@@ -72,7 +130,7 @@ namespace sService
       try
       {
         pHandle = sIPC::Process::launch(options);
-        serviceCreated = pHandle.Valid();
+        serviceCreated = pHandle.get() != 0;
       }
       catch (const std::exception& e)
       {
@@ -85,28 +143,28 @@ namespace sService
       throw std::runtime_error("could not open not create service with module " + modulePath.filename().string());
     if (serviceCreated && serviceOpened)
       throw std::runtime_error("something unexpected has happened");
-    
-    // make our process meta data available
-    m_metaData.DuplicateToProcess(pHandle.handle);
     // now we poll for the target service meta data
     if (
-      PollFor([&pHandle]() {
-        auto targetId = std::format("{}-{}", "Service", sIPC::Process::processId(pHandle.handle.value));
-        auto handle = sIPC::Windows::ReadSharedMemory<ServiceMetaData>(targetId);
-        if (handle.Valid())
+      PollFor([this, &pHandle]() {
+        auto targetId = std::format("{}-{}", "Service", sIPC::Process::processId(pHandle.get()));
+        auto [handle, memory] = sIPC::Windows::ReadSharedMemory<ServiceMetaData>(targetId);
+        auto targetMeta = sIPC::SharedMemory<ServiceMetaData, ServiceMetaLogic>(handle);
+        if (targetMeta.Valid())
         { // cast
-          auto meta = static_cast<ServiceMetaData*>(handle.mappedAddress);
-          LOG_INFO("Connected to Service with PID {}", meta->pid);
+          LOG_INFO("Connected to Service with PID {}", targetMeta->GetPid());
+          // I give my heart to the other process
+          targetMeta->AddProcess(sIPC::Process::currentProcessId(), m_heartbeat->DuplicateToProcess(pHandle));
         }
-        return handle.Valid();
+        return handle.get();
       }))
     {
       // success
       LOG_INFO("Service {} connected!", modulePath.filename().string());
       // store the service
-      serviceCreated ? m_ownedServices.push_back(std::move(pHandle)) : m_openedServices.push_back(std::move(pHandle));
+      auto& where = serviceCreated ? m_ownedServices : m_openedServices;
+      // store
+      where[sIPC::Process::processId(pHandle.get())] = pHandle;
     }
-    
   }
 
 } // namespace sService

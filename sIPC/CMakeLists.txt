@@ -7,17 +7,19 @@ include(../CMake/ProjectOptions.cmake)
 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     # includes
-    include/sIPC.h
     include/Event.h
+    include/Handle.h
     include/Message.h
     include/Process.h
     include/Lock.h
     include/SharedMemory.h
     include/RingBuffer.h
+    include/IPCObject.h
     include/Windows.h
+    include/${PROJECT_NAME}.h
 
     # sources
-    src/sIPC.cpp
+    src/${PROJECT_NAME}.cpp
 )
 
 # dll or excutable
