@@ -121,8 +121,8 @@ namespace sService
     std::string m_serviceId;
     std::filesystem::path m_dllRunnerPath;
     std::filesystem::path m_dllRunnerWorkingDir;
-    std::unordered_map<unsigned, sIPC::WinHandle> m_ownedServices;
-    std::unordered_map<unsigned, sIPC::WinHandle> m_openedServices;
+    std::unordered_map<unsigned, sIPC::Process::ProcessInfo> m_ownedServices;
+    std::unordered_map<unsigned, sIPC::Process::ProcessInfo> m_openedServices;
     sIPC::SharedMemory<ServiceMetaData, ServiceMetaLogic> m_metaData;
     sIPC::SharedMemory<sIPC::EventData, sIPC::EventLogic> m_heartbeat;
 

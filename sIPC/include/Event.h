@@ -61,10 +61,10 @@ namespace sIPC
       switch (result)
       {
       case WAIT_TIMEOUT:
-        LOG_ERROR("timeout.");
+        LOG_ERROR("event timeout {}.", sIPC::Windows::GetWindowsLastError());
         break;
       case WAIT_FAILED:
-        LOG_ERROR("failed {}.", sIPC::Windows::GetWindowsLastError());
+        LOG_ERROR("failed to receive event {}.", sIPC::Windows::GetWindowsLastError());
         break;
       }
       return false;

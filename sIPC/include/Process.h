@@ -12,6 +12,26 @@ namespace sIPC::Process
     std::vector<std::wstring> args;
   };
 
+  struct ProcessInfo
+  {
+    std::string name;
+    WinHandle theHandle;
+  };
+
+
+  std::string GetProcessName(HANDLE hProcess)
+  {
+    char path[MAX_PATH];
+    DWORD size = MAX_PATH;
+
+    if (QueryFullProcessImageNameA(hProcess, 0, path, &size))
+    {
+      return std::string(path);
+    }
+
+    return "";
+  }
+
   bool processHasModule(unsigned long pid, const std::string& moduleName)
   {
     if (moduleName.empty())
@@ -39,17 +59,18 @@ namespace sIPC::Process
     return false;
   }
 
-  WinHandle open(unsigned pid)
+  ProcessInfo open(unsigned pid)
   {
     auto pHandle = OpenProcess(PROCESS_DUP_HANDLE | PROCESS_QUERY_INFORMATION, FALSE, pid);
     if (pHandle == nullptr)
     {
       throw std::runtime_error(std::format("could not open process with pid {}", pid));
     }
-    return CreateWinHandle(pHandle);
+    
+    return { GetProcessName(pHandle), CreateWinHandle(pHandle) };
   }
 
-  WinHandle open(const std::string& processName, const std::string& moduleName = "")
+  ProcessInfo open(const std::string& processName, const std::string& moduleName = "")
   {
     HANDLE pHandle = 0;
     HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -70,7 +91,7 @@ namespace sIPC::Process
         {
           LOG_WARN("Multiple process that meets the criteria have been found!");
           LOG_INFO("We will open the first match ...");
-          return CreateWinHandle(pHandle);
+          return { GetProcessName(pHandle), CreateWinHandle(pHandle) };
         }
 
         std::string exeName(pe.szExeFile);
@@ -82,11 +103,11 @@ namespace sIPC::Process
           }
       } while (Process32Next(hSnap, &pe));
 
-    return CreateWinHandle(pHandle);
+    return { GetProcessName(pHandle), CreateWinHandle(pHandle) };
   }
 
   // launch a new process
-  WinHandle launch(const LaunchOptions& options)
+  ProcessInfo launch(const LaunchOptions& options)
   {
     STARTUPINFOW si;
     PROCESS_INFORMATION pi;
@@ -112,31 +133,31 @@ namespace sIPC::Process
     AssignProcessToJobObject(hJob, pi.hProcess);
 
 
-    return CreateWinHandle(pi.hProcess);
+    return { GetProcessName(pi.hProcess), CreateWinHandle(pi.hProcess) };
   }
 
   // kill a process
   void terminate(
-    const WinHandle pHandle, unsigned exitCode = 1, std::chrono::milliseconds timeout = std::chrono::milliseconds(1))
+    const ProcessInfo pInfo, unsigned exitCode = 1, std::chrono::milliseconds timeout = std::chrono::milliseconds(1))
   {
-    if (!TerminateProcess(pHandle.get(), exitCode))
+    if (!TerminateProcess(pInfo.theHandle.get(), exitCode))
     {
-      //LOG_ERROR("process {} failed to terminate.", pHandle.name);
+      LOG_ERROR("process {} failed to terminate.", pInfo.name);
       return;
     }
 
-    auto result = WaitForSingleObject(pHandle.get(), static_cast<unsigned long>(timeout.count()));
+    auto result = WaitForSingleObject(pInfo.theHandle.get(), static_cast<unsigned long>(timeout.count()));
     switch (result)
     {
     case WAIT_OBJECT_0:
       // Process has exited.
-      //LOG_INFO("process with {} has been terminated.", pHandle.name);
+      LOG_INFO("process with {} has been terminated.", pInfo.name);
       break;
     case WAIT_TIMEOUT:
-      //LOG_ERROR("timeout: process {} could not terminate.", pHandle.name);
+      LOG_ERROR("timeout: process {} could not terminate.", pInfo.name);
       break;
     case WAIT_FAILED:
-      //LOG_ERROR("wait for process {} failed.", pHandle.name);
+      LOG_ERROR("wait for process {} failed.", pInfo.name);
       break;
     }
   }
