@@ -10,6 +10,7 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     include/Event.h
     include/Handle.h
     include/Message.h
+    include/NamedPipe.h
     include/Process.h
     include/Lock.h
     include/SharedMemory.h

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "sipc_export.h"
 #include <windows.h>
 #include <set>

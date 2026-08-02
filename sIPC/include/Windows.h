@@ -137,4 +137,37 @@ namespace sIPC::Windows
     return CreateWinHandle(handle);
   }
 
+  WinHandle CreateWindowsPipe(const std::string& name)
+  {
+    std::string pipeName = "\\\\.\\pipe\\" + name;
+    // Create a pipe to send data
+    HANDLE pipe = CreateNamedPipeA(
+      pipeName.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES, 4096, 4096, 0, NULL);
+
+    if (pipe == NULL || pipe == INVALID_HANDLE_VALUE)
+    {
+      LOG_CRITICAL("could not create pipe: {}", sIPC::Windows::GetWindowsLastError());
+      return nullptr;
+    }
+
+    LOG_INFO("pipe {} has been created", pipeName);
+    return CreateWinHandle(pipe);
+  }
+
+  WinHandle OpenWindowsPipe(const std::string& name)
+  {
+    std::string pipeName = "\\\\.\\pipe\\" + name;
+    HANDLE pipe = CreateFileA(
+      pipeName.c_str(), GENERIC_ALL, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (pipe == NULL || pipe == INVALID_HANDLE_VALUE)
+    {
+      LOG_CRITICAL("could not open pipe: {}", sIPC::Windows::GetWindowsLastError());
+      return nullptr;
+    }
+
+    LOG_INFO("pipe {} has been opened", pipeName);
+    return CreateWinHandle(pipe);
+  }
+
 } // namespace sCore
